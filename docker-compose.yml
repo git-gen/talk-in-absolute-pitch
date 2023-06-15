@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  vite:
+    container_name: talk-in-absolute-pitch
+    build: .
+    command: yarn dev
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    ports:
+      - '5173:5173'
+    tty: true
+    restart: always
+volumes:
+  node_modules:
