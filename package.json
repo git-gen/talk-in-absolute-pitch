@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@skyway-sdk/room": "^1.4.0",
+    "pitchfinder": "^2.3.2",
     "vue": "^3.2.47"
   },
   "devDependencies": {

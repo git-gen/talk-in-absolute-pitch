@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang='ts'>
 import { ref, onMounted } from 'vue'
 import {
   nowInSec,
@@ -9,7 +9,8 @@ import {
   SkyWayStreamFactory,
   uuidV4,
 } from '@skyway-sdk/room'
-import { appId, secret } from './env.ts'
+import { appId, secret } from './env'
+import * as Pitchfinder from 'pitchfinder'
 
 const token = new SkyWayAuthToken({
   jti: uuidV4(),
@@ -54,6 +55,11 @@ const token = new SkyWayAuthToken({
   },
 }).encode(secret)
 
+// ドレミファソラシドの12音符
+const notes = [
+  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
+]
+
 const myVideo = ref(null)
 const myAudio = ref(null)
 
@@ -63,6 +69,8 @@ const remoteAudioArea = ref(null)
 
 const myId = ref('')
 const roomName = ref('')
+const analyzedAudio = ref('')
+const audioPich = ref('')
 
 onMounted(async () => {
   // 自分の音声と映像を取得
@@ -116,6 +124,36 @@ const join = async () => {
         newMedia.controls = true
         newMedia.autoplay = true
 
+        // MediaStreamTrackをMediaStreamに変換
+        const mediaStream = new MediaStream([stream.track])
+        const audioContext = new AudioContext()
+        // MediaStreamからオーディオソースノードを作成
+        const sourceNode = audioContext.createMediaStreamSource(mediaStream)
+        // モノラルのスクリプトプロセッサーノードを作成
+        const scriptNode = audioContext.createScriptProcessor(1024, 1, 1)
+
+        // 処理したオーディオデータが実際に再生させる
+        sourceNode.connect(scriptNode)
+        scriptNode.connect(audioContext.destination)
+
+        // オーディオデータの入力バッファが供給されるたびにコールバック
+        scriptNode.onaudioprocess = (event) => {
+          // オーディオデータを取り出す（モノラル）
+          const audioData = event.inputBuffer.getChannelData(0)
+          // pitchfinderで音声解析
+          const detectPitch = Pitchfinder.YIN()
+          const pitch = detectPitch(audioData)
+
+          // 解析できた音があった場合画面に表示する
+          if (pitch) {
+            audioPich.value = Math.round(pitch)
+            analyzedAudio.value = pitchToNote(audioPich.value)
+          } else {
+            audioPich.value = ''
+            analyzedAudio.value = ''
+          }
+        }
+
         stream.attach(newMedia)
         remoteAudioArea.value.appendChild(newMedia)
         break
@@ -129,12 +167,25 @@ const join = async () => {
   // 別のユーザーが新しく映像・音声を公開した時にも実行
   room.onStreamPublished.add((e: any) => subscribeAndAttach(e.publication))
 }
+
+// 音符にマッピングする関数
+const pitchToNote = (pitch: number) => {
+  const noteIndex = pitch % notes.length
+  // 音符の文字列を返す
+  return notes[noteIndex]
+}
 </script>
 
 <template>
   <div>
     <div>ID: <span>{{ myId }}</span></div>
-    <video ref="localVideo" muted playsinline class="local-video" />
+    <div class="my-data">
+      <video ref="localVideo" muted playsinline class="local-video" />
+      <div class="analyzed-audios">
+        <div class="audio-pitch">{{ audioPich }}</div>
+        <div class="analyzed-audio">{{ analyzedAudio }}</div>
+      </div>
+    </div>
     <div class="room-name">
       Room Name:
       <div v-if="!myId">
@@ -173,5 +224,23 @@ const join = async () => {
   grid-template-columns: 300px;
   grid-auto-flow: column;
   gap: 8px;
+}
+
+.my-data {
+  display: flex;
+  gap: 16px;
+}
+
+.analyzed-audios {
+  width: 200px;
+  border: 1px solid #ffffff;
+}
+
+.audio-pitch{
+  margin-bottom: 8px;
+}
+
+.analyzed-audio {
+  font-size: 128px;
 }
 </style>
