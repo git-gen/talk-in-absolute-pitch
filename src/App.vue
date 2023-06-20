@@ -55,7 +55,7 @@ const token = new SkyWayAuthToken({
   },
 }).encode(secret)
 
-// ドレミファソラシドの12音符
+// ドレミファソラシドの12音符（音名）
 const notes = [
   'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
 ]
@@ -130,7 +130,7 @@ const join = async () => {
         // MediaStreamからオーディオソースノードを作成
         const sourceNode = audioContext.createMediaStreamSource(mediaStream)
         // モノラルのスクリプトプロセッサーノードを作成
-        const scriptNode = audioContext.createScriptProcessor(1024, 1, 1)
+        const scriptNode = audioContext.createScriptProcessor(2048, 1, 1)
 
         // 処理したオーディオデータが実際に再生させる
         sourceNode.connect(scriptNode)
