@@ -57,7 +57,18 @@ const token = new SkyWayAuthToken({
 
 // ドレミファソラシドの12音符（音名）
 const notes = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
+  'C',  // ド
+  'C#', // ド（高）
+  'D',  // レ
+  'D#', // レ（高）
+  'E',  // ミ
+  'F',  // ファ
+  'F#', // ファ（高）
+  'G',  // ソ
+  'G#', // ソ（高）
+  'A',  // ラ
+  'A#', // ラ（高）
+  'B'   // シ
 ]
 
 const myVideo = ref(null)
@@ -141,7 +152,7 @@ const join = async () => {
           // オーディオデータを取り出す（モノラル）
           const audioData = event.inputBuffer.getChannelData(0)
           // pitchfinderで音声解析
-          const detectPitch = Pitchfinder.YIN()
+          const detectPitch = Pitchfinder.AMDF()
           const pitch = detectPitch(audioData)
 
           // 解析できた音があった場合画面に表示する
