@@ -71,6 +71,22 @@ const notes = [
   'B'   // シ
 ]
 
+// 12平均律の周波数
+const frequencies = [
+  261.63, // ド
+  277.18, // ド（高）
+  293.66, // レ
+  311.13, // レ（高）
+  329.63, // ミ
+  349.23, // ファ
+  369.99, // ファ（高）
+  392.00, // ソ
+  415.30, // ソ（高）
+  440.00, // ラ
+  466.16, // ラ（高）
+  493.88  // シ
+]
+
 const myVideo = ref(null)
 const myAudio = ref(null)
 
@@ -158,7 +174,8 @@ const join = async () => {
           // 解析できた音があった場合画面に表示する
           if (pitch) {
             audioPich.value = Math.round(pitch)
-            analyzedAudio.value = pitchToNote(audioPich.value)
+            const pitchIndex = pitchToIndex(audioPich.value)
+            analyzedAudio.value = notes[pitchIndex]
           } else {
             audioPich.value = ''
             analyzedAudio.value = ''
@@ -179,11 +196,9 @@ const join = async () => {
   room.onStreamPublished.add((e: any) => subscribeAndAttach(e.publication))
 }
 
-// 音符にマッピングする関数
-const pitchToNote = (pitch: number) => {
-  const noteIndex = pitch % notes.length
-  // 音符の文字列を返す
-  return notes[noteIndex]
+// ピッチを12で剰余演算する
+const pitchToIndex = (pitch: number) => {
+  return pitch % 12
 }
 </script>
 
