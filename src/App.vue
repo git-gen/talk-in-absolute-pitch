@@ -99,6 +99,8 @@ const roomName = ref('')
 const analyzedAudio = ref('')
 const audioPich = ref('')
 
+const isAbsolutePitch = ref(false)
+
 onMounted(async () => {
   // 自分の音声と映像を取得
   const { audio, video } = await SkyWayStreamFactory.createMicrophoneAudioAndCameraStream()
@@ -163,7 +165,7 @@ const join = async () => {
         sourceNode.connect(scriptNode)
         scriptNode.connect(audioContext.destination)
 
-        // オーディオデータの入力バッファが供給されるたびにコールバック
+        // オーディオデータが一定のバッファサイズになったらコールバックする
         scriptNode.onaudioprocess = (event) => {
           // オーディオデータを取り出す（モノラル）
           const audioData = event.inputBuffer.getChannelData(0)
@@ -176,6 +178,19 @@ const join = async () => {
             audioPich.value = Math.round(pitch)
             const pitchIndex = pitchToIndex(audioPich.value)
             analyzedAudio.value = notes[pitchIndex]
+
+            if (isAbsolutePitch.value) {
+              // オシレーターノードを作成
+              const oscillator = audioContext.createOscillator()
+              oscillator.frequency.value = frequencies[pitchIndex]
+
+              // 出力先に接続してオシレーターを再生する
+              oscillator.connect(audioContext.destination)
+              oscillator.start()
+
+              // オシレーターを0.3秒だけ再生して停止する
+              oscillator.stop(audioContext.currentTime + 0.3)
+            }
           } else {
             audioPich.value = ''
             analyzedAudio.value = ''
@@ -210,6 +225,11 @@ const pitchToIndex = (pitch: number) => {
       <div class="analyzed-audios">
         <div class="audio-pitch">{{ audioPich }}</div>
         <div class="analyzed-audio">{{ analyzedAudio }}</div>
+      </div>
+      <div class="toggles">
+        <label for="absolute-pitch" class="toggle-label">絶対音感モード</label>
+        <input v-model="isAbsolutePitch" type="checkbox" class="toggle" id="absolute-pitch" />
+        <div class="toggle-button" :class="{ 'active': isAbsolutePitch }" @click="isAbsolutePitch = !isAbsolutePitch" />
       </div>
     </div>
     <div class="room-name">
@@ -268,5 +288,52 @@ const pitchToIndex = (pitch: number) => {
 
 .analyzed-audio {
   font-size: 128px;
+}
+
+.toggles {
+  margin: auto;
+  padding: 8px;
+}
+
+.toggle-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.toggle {
+  display: none;
+}
+
+.toggle-button {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 40px;
+  border-radius: 40px;
+  background-color: #dddddd;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.toggle-button.active {
+  background-color: #4bd865;
+}
+
+.toggle-button::after {
+  position: absolute;
+  content: '';
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 0 5px rgb(0 0 0 / 20%);
+  transition: left 0.3s;
+}
+
+.toggle-button.active::after {
+  left: 40px;
 }
 </style>
