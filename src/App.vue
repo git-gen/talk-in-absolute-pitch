@@ -57,34 +57,34 @@ const token = new SkyWayAuthToken({
 
 // ドレミファソラシドの12音符（音名）
 const notes = [
-  'C',  // ド
-  'C#', // ド（高）
-  'D',  // レ
-  'D#', // レ（高）
-  'E',  // ミ
-  'F',  // ファ
-  'F#', // ファ（高）
-  'G',  // ソ
-  'G#', // ソ（高）
-  'A',  // ラ
-  'A#', // ラ（高）
-  'B'   // シ
+  'ラ',
+  'ラ#',
+  'シ',
+  'ド',
+  'ド#',
+  'レ',
+  'レ#',
+  'ミ',
+  'ファ',
+  'ファ#',
+  'ソ',
+  'ソ#'
 ]
 
 // 12平均律の周波数
 const frequencies = [
+  440.00, // ラ
+  466.16, // ラ#（高）
+  493.88, // シ
   261.63, // ド
-  277.18, // ド（高）
+  277.18, // ド#（高）
   293.66, // レ
-  311.13, // レ（高）
+  311.13, // レ#（高）
   329.63, // ミ
   349.23, // ファ
-  369.99, // ファ（高）
+  369.99, // ファ#（高）
   392.00, // ソ
-  415.30, // ソ（高）
-  440.00, // ラ
-  466.16, // ラ（高）
-  493.88  // シ
+  415.30 // ソ#（高）
 ]
 
 const myVideo = ref(null)
@@ -98,6 +98,7 @@ const myId = ref('')
 const roomName = ref('')
 const analyzedAudio = ref('')
 const audioPich = ref('')
+const baseFrequency = ref(440)
 
 const isAbsolutePitch = ref(false)
 
@@ -211,9 +212,13 @@ const join = async () => {
   room.onStreamPublished.add((e: any) => subscribeAndAttach(e.publication))
 }
 
-// ピッチを12で剰余演算する
+// 基準の周波数と測定したピッチから12音符を判定する
 const pitchToIndex = (pitch: number) => {
-  return pitch % 12
+  // ラから測定した音までの半音の数を計算
+  const semitone = Math.round(12 * Math.log2(pitch / baseFrequency.value))
+  // ラからの半音の数を12で割った余りを計算
+  // 結果となる余りはマイナスになる事があるので、それに更に12を足して12で割った余りを出す事で「0~11」の値を出す
+  return (semitone % 12 + 12) % 12
 }
 </script>
 
@@ -223,11 +228,13 @@ const pitchToIndex = (pitch: number) => {
     <div class="my-data">
       <video ref="localVideo" muted playsinline class="local-video" />
       <div class="analyzed-audios">
-        <div class="audio-pitch">{{ audioPich }}</div>
+        <div>{{ audioPich }}</div>
         <div class="analyzed-audio">{{ analyzedAudio }}</div>
       </div>
       <div class="toggles">
-        <label for="absolute-pitch" class="toggle-label">絶対音感モード</label>
+        <label for="base-frequency" class="frequency-label">基準となる「ラ」の周波数</label>
+        <input v-model="baseFrequency" type="text" class="base-frequency" id="base-frequency" />
+        <label for="absolute-pitch" class="toggle-label">標準音階モード</label>
         <input v-model="isAbsolutePitch" type="checkbox" class="toggle" id="absolute-pitch" />
         <div class="toggle-button" :class="{ 'active': isAbsolutePitch }" @click="isAbsolutePitch = !isAbsolutePitch" />
       </div>
@@ -280,19 +287,27 @@ const pitchToIndex = (pitch: number) => {
 .analyzed-audios {
   width: 200px;
   border: 1px solid #ffffff;
+  display: grid;
+  grid-template-rows: 24px 1fr;
+  align-items: center;
 }
 
-.audio-pitch{
-  margin-bottom: 8px;
+.base-frequency {
+  margin-bottom: 16px;
+  text-align: center;
 }
 
 .analyzed-audio {
-  font-size: 128px;
+  font-size: 64px;
 }
 
 .toggles {
   margin: auto;
   padding: 8px;
+}
+
+.frequency-label {
+  display: block;
 }
 
 .toggle-label {
